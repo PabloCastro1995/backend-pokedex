@@ -1,17 +1,15 @@
 const express = require("express");
 const router = express.Router();
 const {
-  deletePokemons,
+  deletePokemon,
   getPokemon,
   getPokemons,
   postPokemons,
-  putPokemons,
 } = require("../controllers/pokemons");
 const { verifyToken } = require("../middlewares/validate-jwt");
-router.get("/Pokemons", getPokemons);
-router.post("/Pokemons", verifyToken, postPokemons);
-router.get("/Pokemons/:id", getPokemon);
-router.put("/Pokemons/:id", verifyToken, putPokemons);
-router.delete("/Pokemons/:id", verifyToken, deletePokemons);
+router.get("/pokemons", getPokemons);
+router.post("/pokemons", verifyToken, postPokemons);
+router.get("/pokemons/:id", getPokemon);
+router.delete("/pokemons/:id", verifyToken, deletePokemon);
 
 module.exports = router;

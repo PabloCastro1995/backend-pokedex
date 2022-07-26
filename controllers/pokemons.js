@@ -10,12 +10,23 @@ exports.getPokemons = async (req, res) => {
       elementos: [pok.elemento1, pok.elemento2],
       nombre: pok.nombre,
       numero: pok.numero,
+      imagen: pok.imagen,
       color: pok.color,
       peso: pok.peso,
       altura: pok.altura,
       descripcion: pok.descripcion,
     }))
   );
+};
+exports.deletePokemon = async (req, res) => {
+  const { id } = req.params;
+  const { rows } = await pool.query(
+    `UPDATE public.pokemon
+    SET  eliminado=true
+    WHERE id=$1`,
+    [parseInt(id)]
+  );
+  res.sendStatus(200);
 };
 exports.getPokemon = async (req, res) => {
   const { id } = req.params;
@@ -28,7 +39,7 @@ exports.getPokemon = async (req, res) => {
     ON po.id = mo.pokemonid
     JOIN elementos ele 
     ON po.id = ele.pokemonid
-    WHERE po.id = $1`,
+    WHERE po.id = $1 `,
     [parseInt(id)]
   );
   const { rows: next } = await pool.query(
@@ -37,14 +48,6 @@ exports.getPokemon = async (req, res) => {
      WHERE id = $1`,
     [parseInt(id) + 1]
   );
-  // exports.deletePokemon = async (req, res) => {
-  //   const { id } = req.params;
-  //   const { rows } = await pool.query(
-  //     `DELETE FROM public.pokemon
-  //     WHERE id=$1`,
-  //     [parseInt(id)]
-  //   );
-
   if (rows[0]) {
     res.status(200).json({
       id: rows[0].id,
@@ -63,6 +66,7 @@ exports.getPokemon = async (req, res) => {
       },
       nombre: rows[0].nombre,
       numero: rows[0].numero,
+      imagen: rows[0].imagen,
       color: rows[0].color,
       peso: rows[0].peso,
       altura: rows[0].altura,
@@ -73,34 +77,47 @@ exports.getPokemon = async (req, res) => {
     res.sendStatus(404);
   }
 };
-exports.postPokemons = (req, res) => {
-  const pokemon = req.body;
-  const nuevaLista = Pokemones;
-  nuevaLista.push(pokemon);
-  return res.send(nuevaLista[nuevaLista.length - 1]);
-};
 
-exports.putPokemons = (req, res) => {
-  const pokemon = req.body;
-  const { id } = req.params;
-  const idPokemon = Pokemones.findIndex((p) => p.numero === id);
-  if (idPokemon === -1) {
-    return res.status(200).json({ mensaje: "No se encontro pokemon" });
+exports.postPokemons = async (req, res) => {
+  console.log(req.body);
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO public.pokemon(nombre, numero, color, peso, altura, descripcion, imagen) VALUES ($1,$2,$3,$4,$5,$6,$7) returning id `,
+      [
+        req.body.nombre,
+        req.body.numero,
+        req.body.color,
+        req.body.peso,
+        req.body.altura,
+        req.body.descripcion,
+        req.body.imagen,
+      ]
+    );
+
+    const id = rows[0].id;
+    const { rows: stats } = await pool.query(
+      `INSERT INTO public.stats(hp, atk, def, satk, sdef,spd, pokemonid) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [
+        req.body.hp,
+        req.body.atk,
+        req.body.def,
+        req.body.satk,
+        req.body.sdef,
+        req.body.spd,
+        id,
+      ]
+    );
+
+    const { rows: movimientos } = await pool.query(
+      `INSERT INTO public.movimientos( movimiento1, pokemonid, movimiento2) VALUES ($1, $2, $3) `,
+      [req.body.movimiento1, id, req.body.movimiento2]
+    );
+    const { rows: elementos } = await pool.query(
+      `INSERT INTO public.elementos(elemento1, pokemonid, elemento2)VALUES ( $1, $2, $3) `,
+      [req.body.elementoPrincipal, id, req.body.elementoSecundario]
+    );
+  } catch (error) {
+    console.log(error);
   }
-  const pokemonAc = { ...Pokemones[idPokemon], ...pokemon };
-  Pokemones[idPokemon] = pokemonAc;
-  return res.send(Pokemones);
+  res.sendStatus(201);
 };
-exports.deletePokemons = (req, res) => {
-  const pokemon = req.body;
-  const { id } = req.params;
-  const pokemonABorrar = pokemon.findIndex((p) => p.numero === id);
-  pokemon.splice(pokemonABorrar, 1)[pokemonABorrar] = pokemon;
-  return res.send(pokemon[pokemonABorrar]);
-};
-function encontrarPorTypes(pokemonesFiltrados, type1) {
-  pokemonesFiltrados = pokemonesFiltrados.filter((e) =>
-    e.elemento.some((el) => el.toLowerCase() === type1.toLowerCase())
-  );
-  return pokemonesFiltrados;
-}
