@@ -1,8 +1,8 @@
-const { rows } = require("pg/lib/defaults.js");
+const { rows } = require("pg/lib/defaults");
 const { pool } = require("../database/conection.js");
 exports.getPokemons = async (req, res) => {
   const { rows } = await pool.query(
-    "select * from pokemon  JOIN elementos ele ON pokemon.id = ele.pokemonid"
+    "select * from pokemon  JOIN elementos ele ON pokemon.id = ele.pokemonid where eliminado = false order by numero"
   );
   res.send(
     rows.map((pok) => ({
@@ -42,12 +42,12 @@ exports.getPokemon = async (req, res) => {
     WHERE po.id = $1 `,
     [parseInt(id)]
   );
-  const { rows: next } = await pool.query(
-    `SELECT id 
-    FROM pokemon
-     WHERE id = $1`,
-    [parseInt(id) + 1]
+  const { rows: pokemones } = await pool.query(
+    "SELECT * FROM pokemon Where eliminado = false ORDER BY numero"
   );
+  const indicepok = pokemones.findIndex((p) => {
+    return p.id == id;
+  });
   if (rows[0]) {
     res.status(200).json({
       id: rows[0].id,
@@ -71,7 +71,8 @@ exports.getPokemon = async (req, res) => {
       peso: rows[0].peso,
       altura: rows[0].altura,
       descripcion: rows[0].descripcion,
-      next: next[0]?.id || null,
+      next: pokemones[indicepok + 1]?.id,
+      prev: pokemones[indicepok - 1]?.id,
     });
   } else {
     res.sendStatus(404);
@@ -113,8 +114,8 @@ exports.postPokemons = async (req, res) => {
       [req.body.movimiento1, id, req.body.movimiento2]
     );
     const { rows: elementos } = await pool.query(
-      `INSERT INTO public.elementos(elemento1, pokemonid, elemento2)VALUES ( $1, $2, $3) `,
-      [req.body.elementoPrincipal, id, req.body.elementoSecundario]
+      `INSERT INTO public.elementos(id, elemento1, elemento2)VALUES ( $1, $2, $3) `,
+      [id, req.body.elemento1, req.body.elemento2]
     );
   } catch (error) {
     console.log(error);

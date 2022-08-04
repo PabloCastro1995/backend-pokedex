@@ -19,12 +19,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NicoCA13/Backend-Pokedex.git"
+    "url": "git+https://github.com/PabloCastro1995/Backend-Pokedex.git"
   },
   "keywords": [],
   "bugs": {
-    "url": "https://github.com/NicoCA13/Backend-Pokedex/issues"
+    "url": "https://github.com/PabloCastro1995/Backend-Pokedex/issues"
   },
-  "homepage": "https://github.com/NicoCA13/Backend-Pokedex#readme",
+  "homepage": "https://github.com/PabloCastro1995/Backend-Pokedex#readme",
   "description": ""
 }
